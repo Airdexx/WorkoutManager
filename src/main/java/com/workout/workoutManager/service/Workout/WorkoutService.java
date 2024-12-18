@@ -2,11 +2,11 @@ package com.workout.workoutManager.service.Workout;
 
 import com.workout.workoutManager.domain.User.entity.User;
 import com.workout.workoutManager.domain.User.repository.UserRepository;
-import com.workout.workoutManager.domain.Workout.WorkoutDetail;
 import com.workout.workoutManager.domain.Workout.entity.WorkoutHistory;
 import com.workout.workoutManager.domain.Workout.entity.WorkoutSet;
 import com.workout.workoutManager.domain.Workout.repository.WorkoutHistoryRepository;
 import com.workout.workoutManager.domain.Workout.repository.WorkoutSetRepository;
+import com.workout.workoutManager.dto.Workout.request.WorkoutSetUpdateRequest;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -136,5 +137,69 @@ public class WorkoutService {
     // 특정 부위의 운동 기록 조회 (엔티티 기반)
     public List<WorkoutHistory> getWorkoutsByBodyPart(User user, String bodyPart) {
         return workoutHistoryRepository.findByUserAndWorkoutType_BodyPart(user, bodyPart);
+    }
+    @Transactional
+    public WorkoutSet updateWorkoutSet(Long workoutId, Long setId, WorkoutSetUpdateRequest request) {
+        WorkoutSet workoutSet = workoutSetRepository.findById(setId)
+                .orElseThrow(() -> new EntityNotFoundException("WorkoutSet not found"));
+
+        if (!workoutSet.getWorkoutHistory().getId().equals(workoutId)) {
+            throw new IllegalArgumentException("WorkoutSet does not belong to the specified workout");
+        }
+
+        workoutSet.updateSet(request.getWeight(), request.getReps());
+        return workoutSetRepository.save(workoutSet);
+    }
+
+    @Transactional
+    public void deleteWorkoutSet(Long workoutId, Long setId) {
+        WorkoutSet workoutSet = workoutSetRepository.findById(setId)
+                .orElseThrow(() -> new EntityNotFoundException("WorkoutSet not found"));
+
+        if (!workoutSet.getWorkoutHistory().getId().equals(workoutId)) {
+            throw new IllegalArgumentException("WorkoutSet does not belong to the specified workout");
+        }
+
+        workoutSetRepository.delete(workoutSet);
+    }
+
+    @Transactional
+    public void deleteWorkout(Long workoutId) {
+        WorkoutHistory workoutHistory = workoutHistoryRepository.findById(workoutId)
+                .orElseThrow(() -> new EntityNotFoundException("Workout not found"));
+
+        // 해당 날짜의 유일한 운동이었는지 확인
+        LocalDateTime startOfDay = workoutHistory.getWorkoutDate().with(LocalTime.MIN);
+        LocalDateTime endOfDay = workoutHistory.getWorkoutDate().with(LocalTime.MAX);
+
+        long workoutCountForDay = workoutHistoryRepository
+                .countByUserAndWorkoutDateBetween(workoutHistory.getUser(), startOfDay, endOfDay);
+
+        // 해당 날짜의 유일한 운동이었다면 포인트 차감
+        if (workoutCountForDay == 1) {
+            User user = workoutHistory.getUser();
+            user.subtractPoints(DAILY_ATTENDANCE_POINTS);
+
+            // 스트릭도 재계산
+            recalculateStreak(user, workoutHistory.getWorkoutDate());
+            userRepository.save(user);
+        }
+
+        // 운동 기록 삭제 (cascade로 세트도 함께 삭제됨)
+        workoutHistoryRepository.delete(workoutHistory);
+    }
+
+    private void recalculateStreak(User user, LocalDateTime deletedWorkoutDate) {
+        // 삭제된 운동 이후의 가장 최근 운동 찾기
+        Optional<WorkoutHistory> latestWorkout = workoutHistoryRepository
+                .findFirstByUserOrderByWorkoutDateDesc(user);
+
+        if (latestWorkout.isPresent()) {
+            // 스트릭 다시 계산
+            updateStreak(user);
+        } else {
+            // 운동 기록이 없으면 스트릭 초기화
+            user.resetStreak();
+        }
     }
 }

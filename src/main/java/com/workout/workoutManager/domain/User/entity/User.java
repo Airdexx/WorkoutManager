@@ -94,6 +94,11 @@ public class User {
         this.streak = 0;
     }
 
+    //subtract points when you delete entire workoutplans
+    public void subtractPoints(int points) {
+        this.point = Math.max(0, this.point - points);  // 음수가 되지 않도록 처리
+    }
+
     //about getting point
     private void addPointByStreak(int currentStreak) {
         if (currentStreak >= 30) this.point += 500;

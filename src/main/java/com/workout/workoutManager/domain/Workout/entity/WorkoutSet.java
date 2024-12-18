@@ -1,8 +1,10 @@
 package com.workout.workoutManager.domain.Workout.entity;
 
-import com.workout.workoutManager.domain.Workout.entity.WorkoutHistory;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -35,7 +37,10 @@ public class WorkoutSet {
         this.weight = weight;
         this.reps = reps;
     }
-
+    public void updateSet(BigDecimal weight, Integer reps) {
+        if (weight != null) this.weight = weight;
+        if (reps != null) this.reps = reps;
+    }
     // 연관관계 메서드
     public void setWorkoutHistory(WorkoutHistory workoutHistory) {
         this.workoutHistory = workoutHistory;

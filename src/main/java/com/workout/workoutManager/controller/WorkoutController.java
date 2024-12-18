@@ -3,16 +3,17 @@ package com.workout.workoutManager.controller;
 import com.workout.workoutManager.domain.Workout.entity.WorkoutHistory;
 import com.workout.workoutManager.domain.Workout.entity.WorkoutSet;
 import com.workout.workoutManager.dto.Workout.request.WorkoutRecordRequest;
+import com.workout.workoutManager.dto.Workout.request.WorkoutSetUpdateRequest;
 import com.workout.workoutManager.dto.Workout.response.WorkoutHistoryResponse;
 import com.workout.workoutManager.dto.Workout.response.WorkoutSetResponse;
 import com.workout.workoutManager.service.Workout.WorkoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -126,5 +127,40 @@ public class WorkoutController {
                 .map(WorkoutHistoryResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
+    }
+    @Operation(
+            summary = "운동 세트 정보 수정",
+            description = "특정 운동 세트의 무게, 반복 횟수를 수정합니다."
+    )
+    @PutMapping("/workouts/{workoutId}/sets/{setId}")
+    public ResponseEntity<WorkoutSetResponse> updateWorkoutSet(
+            @PathVariable Long workoutId,
+            @PathVariable Long setId,
+            @RequestBody WorkoutSetUpdateRequest request) {
+        WorkoutSet updatedSet = workoutService.updateWorkoutSet(workoutId, setId, request);
+        return ResponseEntity.ok(WorkoutSetResponse.from(updatedSet));
+    }
+
+    @Operation(
+            summary = "운동 세트 삭제",
+            description = "특정 운동의 특정 세트를 삭제합니다."
+    )
+    @DeleteMapping("/workouts/{workoutId}/sets/{setId}")
+    public ResponseEntity<Void> deleteWorkoutSet(
+            @PathVariable Long workoutId,
+            @PathVariable Long setId) {
+        workoutService.deleteWorkoutSet(workoutId, setId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "운동 기록 전체 삭제",
+            description = "특정 운동 기록을 완전히 삭제하고 관련 포인트를 차감합니다."
+    )
+    @DeleteMapping("/workouts/{workoutId}")
+    public ResponseEntity<Void> deleteWorkout(
+            @PathVariable Long workoutId) {
+        workoutService.deleteWorkout(workoutId);
+        return ResponseEntity.ok().build();
     }
 }

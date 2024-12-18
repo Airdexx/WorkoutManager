@@ -62,4 +62,18 @@ public interface WorkoutHistoryRepository extends JpaRepository<WorkoutHistory, 
 
     // 가장 최근 운동 기록 조회 (엔티티 관계)
     Optional<WorkoutHistory> findFirstByUserOrderByWorkoutDateDesc(User user);
+
+    // 특정 기간 동안의 운동 기록 수 계산 (기존)
+    long countByUserIdAndWorkoutDateBetween(
+            Long userId,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
+
+    // 특정 기간 동안의 운동 기록 수 계산 (엔티티 관계)
+    long countByUserAndWorkoutDateBetween(
+            User user,
+            LocalDateTime startDate,
+            LocalDateTime endDate
+    );
 }
