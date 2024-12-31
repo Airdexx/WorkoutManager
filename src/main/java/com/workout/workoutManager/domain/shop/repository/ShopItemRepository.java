@@ -1,5 +1,6 @@
 package com.workout.workoutManager.domain.shop.repository;
 
+import com.workout.workoutManager.domain.shop.entity.ItemCondition;
 import com.workout.workoutManager.domain.shop.entity.ItemType;
 import com.workout.workoutManager.domain.shop.entity.ShopItem;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,14 @@ import java.util.Optional;
  */
 @Repository
 public interface ShopItemRepository extends JpaRepository<ShopItem, Long> {
+    /**
+     * 특정 조건으로 획득 가능한 아이템을 조회합니다.
+     *
+     * @param condition 아이템 획득 조건
+     * @return 해당하는 상점 아이템 Optional
+     */
+    Optional<ShopItem> findByCondition(ItemCondition condition);
+
     /**
      * 아이템 타입별로 상점 아이템을 조회합니다.
      *

@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 아이템 획득 조건 관리를 위한 Repository
@@ -23,11 +22,11 @@ public interface ItemConditionRepository extends JpaRepository<ItemCondition, Lo
     List<ItemCondition> findByAchievementType(AchievementType achievementType);
 
     /**
-     * 특정 운동 타입에 대한 달성 조건을 조회합니다.
+     * 특정 운동 타입에 대한 달성 조건 목록을 조회합니다.
      *
      * @param achievementType 달성 타입
      * @param workoutType 운동 타입
-     * @return 해당하는 달성 조건 Optional
+     * @return 해당하는 달성 조건 목록
      */
-    Optional<ItemCondition> findByAchievementTypeAndWorkoutType(AchievementType achievementType, WorkoutType workoutType);
+    List<ItemCondition> findByAchievementTypeAndWorkoutType(AchievementType achievementType, WorkoutType workoutType);
 }

@@ -1,6 +1,7 @@
 package com.workout.workoutManager.domain.shop.repository;
 
 import com.workout.workoutManager.domain.User.entity.User;
+import com.workout.workoutManager.domain.shop.entity.ItemCondition;
 import com.workout.workoutManager.domain.shop.entity.ShopItem;
 import com.workout.workoutManager.domain.shop.entity.UserItem;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -47,4 +48,23 @@ public interface UserItemRepository extends JpaRepository<UserItem, Long> {
      * @return 보유 여부 (true/false)
      */
     boolean existsByUserAndItem(User user, ShopItem item);
+
+    /**
+     * 특정 사용자 ID와 아이템 ID로 보유 아이템을 조회합니다.
+     *
+     * @param userId 조회할 사용자의 ID
+     * @param itemId 조회할 아이템의 ID
+     * @return 해당하는 UserItem Optional
+     */
+    Optional<UserItem> findByUser_IdAndItem_Id(Long userId, Long itemId);
+
+
+    /**
+     * 특정 사용자가 특정 조건의 아이템을 보유하고 있는지 확인합니다.
+     *
+     * @param user 확인할 사용자
+     * @param condition 확인할 아이템 조건
+     * @return 보유 여부 (true/false)
+     */
+    boolean existsByUserAndItem_Condition(User user, ItemCondition condition);
 }
