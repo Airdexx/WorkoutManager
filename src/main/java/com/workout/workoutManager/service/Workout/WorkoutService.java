@@ -7,6 +7,7 @@ import com.workout.workoutManager.domain.Workout.entity.WorkoutSet;
 import com.workout.workoutManager.domain.Workout.repository.WorkoutHistoryRepository;
 import com.workout.workoutManager.domain.Workout.repository.WorkoutSetRepository;
 import com.workout.workoutManager.dto.Workout.request.WorkoutSetUpdateRequest;
+import com.workout.workoutManager.service.shop.ShopService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,20 +21,22 @@ import java.util.Optional;
 @Service
 @Transactional
 public class WorkoutService {
-    private static final int DAILY_ATTENDANCE_POINTS = 300;
+    private static final int DAILY_ATTENDANCE_POINTS = 500;
 
     private final WorkoutHistoryRepository workoutHistoryRepository;
     private final UserRepository userRepository;
     private final WorkoutSetRepository workoutSetRepository;
-
+    private final ShopService shopService;
     public WorkoutService(
             WorkoutHistoryRepository workoutHistoryRepository,
             UserRepository userRepository,
-            WorkoutSetRepository workoutSetRepository
+            WorkoutSetRepository workoutSetRepository,
+            ShopService shopService
     ) {
         this.workoutHistoryRepository = workoutHistoryRepository;
         this.userRepository = userRepository;
         this.workoutSetRepository = workoutSetRepository;
+        this.shopService = shopService;
     }
 
     @Transactional
@@ -45,6 +48,12 @@ public class WorkoutService {
 
     @Transactional
     public void recordWorkout(User user, WorkoutHistory workoutHistory, List<WorkoutSet> sets) {
+        LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
+
+        // 운동 기록 저장 전에 오늘의 첫 운동인지 확인
+        boolean isFirstWorkoutOfDay = !workoutHistoryRepository.existsByUserAndWorkoutDateBetween(user, startOfDay, endOfDay);
+
         workoutHistory.setUser(user);
         workoutHistory.setWorkoutDate(LocalDateTime.now());
 
@@ -59,21 +68,65 @@ public class WorkoutService {
             workoutSetRepository.save(set);
         }
 
-        // 오늘 첫 운동인지 확인하고 포인트 부여
-        checkAndUpdateDailyStatus(user);
+        // 운동 기록 작성 보상 포인트 지급
+        user.addPoint(100);
+
+        // 첫 운동인 경우에만 streak 관련 처리
+        if (isFirstWorkoutOfDay) {
+            user.addPoint(DAILY_ATTENDANCE_POINTS);
+
+            LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+            boolean workedOutYesterday = workoutHistoryRepository.existsByUserAndWorkoutDateBetween(
+                    user,
+                    yesterday.with(LocalTime.MIN),
+                    yesterday.with(LocalTime.MAX)
+            );
+
+            if (workedOutYesterday || user.getStreak() == 0) {
+                user.incrementStreak();
+            } else {
+                user.resetStreak();
+            }
+        }
+
+        // 최초 운동 업적 확인 및 보상 처리 추가
+        shopService.checkAndRewardFirstWorkout(user.getId(), workoutHistory.getWorkoutType().getId());
+
+        userRepository.save(user);
     }
 
     private void checkAndUpdateDailyStatus(User user) {
         LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
         LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
 
+        // 당일 운동 여부 체크를 위한 변수
+        boolean hasWorkedOutToday = workoutHistoryRepository.existsByUserAndWorkoutDateBetween(user, startOfDay, endOfDay);
+        System.out.println("Today's workout exists: " + hasWorkedOutToday);
+
         // 오늘 첫 운동인 경우에만 포인트와 스트릭 업데이트
-        if (!workoutHistoryRepository.existsByUserAndWorkoutDateBetween(user, startOfDay, endOfDay)) {
+        if (!hasWorkedOutToday) {
+            System.out.println("Processing first workout of the day");
             // 기본 출석 포인트 부여
             user.addPoint(DAILY_ATTENDANCE_POINTS);
 
-            // 스트릭 업데이트 (스트릭에 따른 추가 포인트는 incrementStreak 내부에서 처리됨)
-            updateStreak(user);
+            // 어제 운동했거나 streak가 0인 경우 streak 증가
+            LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+            boolean workedOutYesterday = workoutHistoryRepository.existsByUserAndWorkoutDateBetween(
+                    user,
+                    yesterday.with(LocalTime.MIN),
+                    yesterday.with(LocalTime.MAX)
+            );
+            System.out.println("Yesterday's workout exists: " + workedOutYesterday);
+            System.out.println("Current streak: " + user.getStreak());
+
+            if (workedOutYesterday || user.getStreak() == 0) {
+                System.out.println("Incrementing streak");
+                user.incrementStreak();
+                System.out.println("New streak value: " + user.getStreak());
+            } else {
+                System.out.println("Resetting streak");
+                user.resetStreak();
+            }
 
             userRepository.save(user);
         }

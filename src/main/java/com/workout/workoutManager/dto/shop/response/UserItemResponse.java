@@ -21,6 +21,7 @@ public class UserItemResponse {
     private String description;     // 아이템 설명
     private boolean equipped;       // 장착 여부
     private LocalDateTime acquiredAt; // 획득 일시
+    private String imagePath;       // 이미지 경로 추가
 
     @Builder
     public UserItemResponse(UserItem userItem) {
@@ -31,5 +32,6 @@ public class UserItemResponse {
         this.description = userItem.getItem().getDescription();
         this.equipped = userItem.isEquipped();
         this.acquiredAt = userItem.getAcquiredAt();
+        this.imagePath = userItem.getItem().getImagePath();  // 이미지 경로 설정
     }
 }

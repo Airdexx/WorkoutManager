@@ -24,6 +24,7 @@ public class ShopItemResponse {
     private LocalDateTime endDate;      // 판매 종료일 (한정판의 경우)
     private String achievementCondition;// 획득 조건 설명
     private boolean owned;              // 사용자 보유 여부
+    private String imagePath;
 
     @Builder
     public ShopItemResponse(ShopItem item, boolean owned) {
@@ -37,5 +38,6 @@ public class ShopItemResponse {
         this.endDate = item.getEndDate();
         this.achievementCondition = item.getCondition().getDescription();
         this.owned = owned;
+        this.imagePath = item.getImagePath();  // 추가
     }
 }

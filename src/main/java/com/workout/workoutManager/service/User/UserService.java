@@ -11,6 +11,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -115,6 +117,16 @@ public class UserService {
     @Transactional
     public void updateLastLoginTime(Long id) {
         User user = getUserById(id);
+
+        // 오늘 처음 로그인하는 경우에만 포인트 지급
+        LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
+
+        if (user.getLastLoginedAt() == null ||
+                user.getLastLoginedAt().isBefore(startOfDay)) {
+            user.addPoint(500);  // 로그인 포인트 지급
+        }
+
         user.updateLastLoginTime();
     }
 

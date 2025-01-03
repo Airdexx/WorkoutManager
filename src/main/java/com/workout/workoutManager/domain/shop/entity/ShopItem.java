@@ -47,10 +47,13 @@ public class ShopItem extends BaseTimeEntity {
     @OneToMany(mappedBy = "item")
     private List<UserItem> userItems = new ArrayList<>();
 
+    @Column(name = "image_path")
+    private String imagePath;
+
     @Builder
     public ShopItem(ItemType type, ItemCondition condition, String name, 
                    String description, int price, boolean limited,
-                   LocalDateTime startDate, LocalDateTime endDate) {
+                   LocalDateTime startDate, LocalDateTime endDate, String imagePath) {
         this.type = type;
         this.condition = condition;
         this.name = name;
@@ -59,5 +62,6 @@ public class ShopItem extends BaseTimeEntity {
         this.limited = limited;
         this.startDate = startDate;
         this.endDate = endDate;
+        this.imagePath = imagePath;
     }
 }
